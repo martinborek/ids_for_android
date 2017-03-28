@@ -4,8 +4,7 @@
 # Date: Mar/2017
 
 
-class InputError(Exception):
-    # TODO: test if necessary
+class CustomError(Exception):
     def __init__(self, value):
         self.value = value
 
@@ -13,10 +12,16 @@ class InputError(Exception):
         return repr(self.value)
 
 
-class ParamError(Exception):
-    # TODO: test if necessary
-    def __init__(self, value):
-        self.value = value
-
+class InputError(CustomError):
     def __str__(self):
-        return repr(self.value)
+        return "Input error: {}".format(self.value)
+
+
+class ParamError(CustomError):
+    def __str__(self):
+        return "Wrong parameters: {}".format(self.value)
+
+
+class ArgError(CustomError):
+    def __str__(self):
+        return "Wrong arguments: {}".format(self.value)

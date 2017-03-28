@@ -7,6 +7,7 @@ import argparse
 import sys
 from log_parser import LogParser
 import errors
+import logging
 
 import json
 
@@ -24,6 +25,11 @@ class Params:
 
     def __del__(self):
         self.cleanup()
+
+    def __repr__(self):
+        return "Params(input_log=%r, output=%r, time_included=%r, normalise=%r, json=%r, histogram=%r, ngram=%r," \
+               "co_occurrence_matrix=%r)" % (self.input_log, self.output_log, self.time_included, self.normalise,
+                                            self.json, self.histogram, self.ngram, self.co_occurrence_matrix)
 
     def _open_input(self, filename):
 
@@ -89,46 +95,43 @@ class Params:
 def main():
     """MAIN PROGRAM"""
 
-    print("Script starting..")
+    logging.info("Script starting...")
     params = Params()
-    print("Parsing arguments...")
+    logging.info("Parsing parameters...")
     try:
         params.get_args()
 
-    except errors.InputError as e:
-        sys.stderr.write("Input error: " + e.value + '\n')
+    except (errors.InputError, errors.ParamError) as e:
+        sys.stderr.write(str(e) + '\n')
         exit(1)
 
-    except errors.ParamError as e:
-        sys.stderr.write("Wrong parameters: " + e.value + '\n')
-        exit(1)
-
-    print("Arguments parsed")
-
+    logging.info("Parsing system calls log file...")
     parser = LogParser(params.input_log, params.time_included)
-    print("Calls analysed: {}".format(parser.system_calls_num))
+
+    print("Calls analysed: {}".format(parser.system_calls_num)) # TODO
 
     if params.ngram is not None:
-        print("Getting ngram...")
-        ngram = parser.ngram(params.ngram)
-        print("Ngram({}):".format(params.ngram))
+        logging.info("Getting Ngram...")
+
+        ngram = parser.ngram(params.ngram, params.normalise)
         print("Unique sequences: {}".format(len(ngram)))
-        for call in ngram:
-            print("{}: {}".format(*call), file=params.output)
+
+        print(ngram, file=params.output)
 
     elif params.co_occurrence_matrix is not None:
-        print("Getting co_occurrence matrix...")
-        # TODO
+        logging.info("Getting Co-occurrence matrix...")
+
+        co_occurrence_matrix = parser.co_occurrence_matrix(params.co_occurrence_matrix, params.normalise)
+        print(co_occurrence_matrix, file=params.output)
 
     else:
         if not params.histogram:
-            print("No option selected, using histogram.")
+            sys.stderr.write("No option selected, using histogram.\n")
 
-        print("Getting histogram...")
+        logging.info("Getting Histogram...")
         histogram = parser.histogram(params.normalise)
-        print("Histogram:")
-        for call in histogram:
-            print("{}: {}".format(*call), file=params.output)
+
+        print(histogram, file=params.output)
 
     params.cleanup()
 
