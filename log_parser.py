@@ -60,22 +60,20 @@ class CoOccurrenceMatrix(FeatureVector):
 
 
 class LogParser:
-    def __init__(self, input_log, time_included=False):
+    def __str__(self):
+        return "\n".join(self._s_call_list)
+
+    def __init__(self, input_log, column_pos=0):
+        # column_pos specifies at which column in the log the system call name is
         self._input_log = input_log
         self.system_calls_num = 0
         self._s_call_list = []
 
-        # Position of system call names in the log
-        if time_included:
-            call_position = 2
-        else:
-            call_position = 1
-
         # Parse system call names
         logging.info("Parsing system call names...")
         for line in self._input_log:
-            part = line.split(maxsplit=call_position)  # No need to split after the system call name
-            part_s_call = part[call_position]
+            part = line.split(maxsplit=column_pos)  # No need to split after the system call name
+            part_s_call = part[column_pos]
 
             if part_s_call[0] in ('<', '+', '-'):
                 continue  # Not a new system call

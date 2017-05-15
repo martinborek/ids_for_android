@@ -106,7 +106,14 @@ def main():
         exit(1)
 
     logging.info("Parsing system calls log file...")
-    parser = LogParser(params.input_log, params.time_included)
+
+    # Position of system call names in the log
+    if params.time_included:
+        column_pos = 1
+    else:
+        column_pos = 0
+
+    parser = LogParser(params.input_log, column_pos)
 
     print("Calls analysed: {}".format(parser.system_calls_num)) # TODO
 
