@@ -15,6 +15,7 @@ import json
 class Params:
     def __init__(self):
         self.input_log = None
+        self.syscalls_list = None #  Work only with these syscalls when processing logs
         self.output = sys.stdout
         self.time_included = False
         self.normalise = False
@@ -27,9 +28,11 @@ class Params:
         self.cleanup()
 
     def __repr__(self):
-        return "Params(input_log=%r, output=%r, time_included=%r, normalise=%r, json=%r, histogram=%r, ngram=%r," \
-               "co_occurrence_matrix=%r)" % (self.input_log, self.output_log, self.time_included, self.normalise,
-                                            self.json, self.histogram, self.ngram, self.co_occurrence_matrix)
+        return "Params(input_log=%r, syscalls_list=%r, output=%r, time_included=%r, normalise=%r, json=%r," \
+               "histogram=%r, ngram=%r, co_occurrence_matrix=%r)" % (self.input_log, self.syscalls_list,
+                                                                     self.output_log, self.time_included,
+                                                                     self.normalise, self.json, self.histogram,
+                                                                     self.ngram, self.co_occurrence_matrix)
 
     def _open_input(self, filename):
 
@@ -56,10 +59,20 @@ class Params:
         if self.output is not sys.stdout and not self.output.closed:
             self.output.close()
 
+    # Load list of system calls from a file
+    def _read_syscalls(self, filename):
+        try:
+            with open(filename, 'r') as file:
+                self.syscalls_list = [line[:-1] for line in file]
+        except:
+            raise errors.InputError("Syscalls file couldn't be opened.")
+
     def get_args(self):
         arg_parser = argparse.ArgumentParser()
         arg_parser.add_argument("input", help="Input file")
         arg_parser.add_argument("--output", help="Output file; if not specified, standard output is used.")
+        arg_parser.add_argument("--syscalls", help="Input file with system calls to include in the processing; each"
+                                                   "system call is on a new line and system calls should not repeat")
         arg_parser.add_argument("--timeincluded", action="store_true",
                                 help="Is time information included in the input log?")
         arg_parser.add_argument("--normalise", action="store_true",
@@ -76,6 +89,9 @@ class Params:
         self.normalise = args.normalise
         self.json = args.json
         self.histogram = args.histogram
+
+        if args.syscalls is not None:
+            self._read_syscalls(args.syscalls)
 
         if args.ngram is not None:
             if args.ngram < 2:
@@ -120,7 +136,7 @@ def main():
     if params.ngram is not None:
         logging.info("Getting Ngram...")
 
-        ngram = parser.ngram(params.ngram, params.normalise)
+        ngram = parser.ngram(params.ngram, params.normalise, params.syscalls_list)
         print("Unique sequences: {}".format(len(ngram)))
 
         print(ngram, file=params.output)
@@ -128,7 +144,8 @@ def main():
     elif params.co_occurrence_matrix is not None:
         logging.info("Getting Co-occurrence matrix...")
 
-        co_occurrence_matrix = parser.co_occurrence_matrix(params.co_occurrence_matrix, params.normalise)
+        co_occurrence_matrix = parser.co_occurrence_matrix(params.co_occurrence_matrix, params.normalise,
+                                                           params.syscalls_list)
         print(co_occurrence_matrix, file=params.output)
 
     else:
@@ -136,7 +153,7 @@ def main():
             sys.stderr.write("No option selected, using histogram.\n")
 
         logging.info("Getting Histogram...")
-        histogram = parser.histogram(params.normalise)
+        histogram = parser.histogram(params.normalise, params.syscalls_list)
 
         print(histogram, file=params.output)
 

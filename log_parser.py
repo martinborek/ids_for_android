@@ -10,7 +10,7 @@ import logging
 
 
 class FeatureVector:
-    def __init__(self, feature_dict, system_calls_num, normalise=False):
+    def __init__(self, feature_dict, system_calls_num, normalise=False, syscalls_list=None):
         self.feature_dict = feature_dict
         self.system_calls_num = system_calls_num
 
@@ -83,17 +83,26 @@ class LogParser:
                 self._s_call_list.append(s_call)
                 self.system_calls_num += 1
 
-    def histogram(self, normalise=False):
+    def histogram(self, normalise=False, syscalls_list=None):
 
-        histogram_dict = {}
+        if syscalls_list is not None:
+            # Specified system calls should be included even if they did not occur in the log file
+            histogram_dict = {syscall: 0 for syscall in syscalls_list}
+        else:
+            histogram_dict = {}
+
         for call in self._s_call_list:
+            if syscalls_list is not None:
+                if call not in histogram_dict:
+                    # Only specified system calls should be included
+                    continue
             histogram_dict[call] = histogram_dict.get(call, 0) + 1
 
         histogram = Histogram(histogram_dict, self.system_calls_num, normalise)
 
         return histogram
 
-    def ngram(self, n, normalise=False):
+    def ngram(self, n, normalise=False, syscalls_list=None):
 
         ngram_dict = {}
         for i in range(0, len(self._s_call_list) - n + 1):
@@ -104,9 +113,12 @@ class LogParser:
 
         return ngram
 
-    def co_occurrence_matrix(self, offset, normalise=False):
+    def co_occurrence_matrix(self, offset, normalise=False, syscalls_list=None):
 
-        com_dict = {}
+        if syscalls_list is not None:
+            com_dict = {syscall: 0 for syscall in syscalls_list}
+        else:
+            com_dict = {}
 
         for i in range(0, len(self._s_call_list)):
             for j in range(i, min(i+offset, len(self._s_call_list))):
