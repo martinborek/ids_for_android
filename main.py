@@ -8,8 +8,7 @@ import sys
 from log_parser import LogParser
 import errors
 import logging
-
-import json
+import csv
 
 
 class Params:
@@ -23,6 +22,7 @@ class Params:
         self.histogram = None
         self.ngram = None
         self.co_occurrence_matrix = None
+        self.csv_values = False
 
     def __del__(self):
         self.cleanup()
@@ -72,7 +72,10 @@ class Params:
         arg_parser.add_argument("input", help="Input file")
         arg_parser.add_argument("--output", help="Output file; if not specified, standard output is used.")
         arg_parser.add_argument("--syscalls", help="Input file with system calls to include in the processing; each"
-                                                   "system call is on a new line and system calls should not repeat")
+                                                   "system call is on a new line and system calls should not repeat.")
+        arg_parser.add_argument("--csv", action="store_true", help="Output only values (as CSV), not their keys."
+                                                                      "This is useful for getting data as a feature"
+                                                                      "vector.")
         arg_parser.add_argument("--timeincluded", action="store_true",
                                 help="Is time information included in the input log?")
         arg_parser.add_argument("--normalise", action="store_true",
@@ -89,6 +92,7 @@ class Params:
         self.normalise = args.normalise
         self.json = args.json
         self.histogram = args.histogram
+        self.csv_values = args.csv
 
         if args.syscalls is not None:
             self._read_syscalls(args.syscalls)
@@ -136,26 +140,28 @@ def main():
     if params.ngram is not None:
         logging.info("Getting Ngram...")
 
-        ngram = parser.ngram(params.ngram, params.normalise, params.syscalls_list)
-        print("Unique sequences: {}".format(len(ngram)))
-
-        print(ngram, file=params.output)
+        feature_vector = parser.ngram(params.ngram, params.normalise, params.syscalls_list)
+        print("Unique sequences: {}".format(len(feature_vector)))
 
     elif params.co_occurrence_matrix is not None:
         logging.info("Getting Co-occurrence matrix...")
 
-        co_occurrence_matrix = parser.co_occurrence_matrix(params.co_occurrence_matrix, params.normalise,
+        feature_vector = parser.co_occurrence_matrix(params.co_occurrence_matrix, params.normalise,
                                                            params.syscalls_list)
-        print(co_occurrence_matrix, file=params.output)
-
     else:
         if not params.histogram:
             sys.stderr.write("No option selected, using histogram.\n")
 
         logging.info("Getting Histogram...")
-        histogram = parser.histogram(params.normalise, params.syscalls_list)
+        feature_vector = parser.histogram(params.normalise, params.syscalls_list)
 
-        print(histogram, file=params.output)
+    if params.csv_values:
+        #print(feature_vector.get_csv_values(), file=params.output, end='')
+        writer = csv.writer(params.output)
+        writer.writerow(feature_vector.get_values())
+        #print(feature_vector.get_values(), file=params.output, end='')
+    else:
+        print(feature_vector, file=params.output, end='')
 
     params.cleanup()
 

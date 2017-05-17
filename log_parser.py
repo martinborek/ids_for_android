@@ -10,21 +10,48 @@ import logging
 
 
 class FeatureVector:
-    def __init__(self, feature_dict, system_calls_num, normalise=False, syscalls_list=None):
+    def __init__(self, feature_dict, system_calls_num, normalise=False, sort_alphabetically=False):
         self.feature_dict = feature_dict
         self.system_calls_num = system_calls_num
+        self.sort_alphabetically = sort_alphabetically
 
         if not isinstance(normalise, bool):
             raise errors.ArgError("'normalise' has to be boolean")
         self.normalise = normalise
 
     def get_normalised(self):
-        return [(k, (self.feature_dict[k] / self.system_calls_num)) for k in
-                sorted(self.feature_dict, key=self.feature_dict.get, reverse=True)]
+        if self.sort_alphabetically:
+            sorted_feature_list = sorted(self.feature_dict)
+        else:
+            sorted_feature_list = sorted(self.feature_dict, key=self.feature_dict.get, reverse=True)
+
+        return [(k, (self.feature_dict[k] / self.system_calls_num)) for k in sorted_feature_list]
 
     def get_original(self):
-        return [(k, self.feature_dict[k]) for k in
-                sorted(self.feature_dict, key=self.feature_dict.get, reverse=True)]
+        if self.sort_alphabetically:
+            sorted_feature_list = sorted(self.feature_dict)
+        else:
+            sorted_feature_list = sorted(self.feature_dict, key=self.feature_dict.get, reverse=True)
+
+        return [(k, self.feature_dict[k]) for k in sorted_feature_list]
+
+    def get_values(self):
+        # The returned values have to be always in the same order. For this purpose, keys are sorted alphabetically
+
+        if self.normalise:
+            return [str(self.feature_dict[k] / self.system_calls_num) for k in sorted(self.feature_dict)]
+        else:
+            return [str(self.feature_dict[k]) for k in sorted(self.feature_dict)]
+
+    def get_csv_values(self):
+        # The returned values have to be always in the same order. For this purpose, keys are sorted alphabetically
+
+        if self.normalise:
+            csv_string = ','.join([str(self.feature_dict[k] / self.system_calls_num) for k in sorted(self.feature_dict)])
+        else:
+            csv_string = ','.join([str(self.feature_dict[k]) for k in sorted(self.feature_dict)])
+
+        return csv_string
 
     def __len__(self):
         return len(self.feature_dict)
@@ -85,20 +112,21 @@ class LogParser:
 
     def histogram(self, normalise=False, syscalls_list=None):
 
-        if syscalls_list is not None:
+        syscalls_selected = (syscalls_list is not None)
+        if syscalls_selected:
             # Specified system calls should be included even if they did not occur in the log file
             histogram_dict = {syscall: 0 for syscall in syscalls_list}
         else:
             histogram_dict = {}
 
         for call in self._s_call_list:
-            if syscalls_list is not None:
+            if syscalls_selected:
                 if call not in histogram_dict:
                     # Only specified system calls should be included
                     continue
             histogram_dict[call] = histogram_dict.get(call, 0) + 1
 
-        histogram = Histogram(histogram_dict, self.system_calls_num, normalise)
+        histogram = Histogram(histogram_dict, self.system_calls_num, normalise, syscalls_selected)
 
         return histogram
 
