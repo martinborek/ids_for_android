@@ -62,7 +62,7 @@ class Params:
     # Load list of system calls from a file
     def _read_syscalls(self, filename):
         try:
-            with open(filename, 'r') as file:
+            with open(filename, "r", encoding="utf-8") as file:
                 self.syscalls_list = [line[:-1] for line in file]
         except:
             raise errors.InputError("Syscalls file couldn't be opened.")
@@ -135,13 +135,13 @@ def main():
 
     parser = LogParser(params.input_log, column_pos)
 
-    print("Calls analysed: {}".format(parser.system_calls_num)) # TODO
+    #print("Calls analysed: {}".format(parser.system_calls_num)) # TODO
 
     if params.ngram is not None:
         logging.info("Getting Ngram...")
 
         feature_vector = parser.ngram(params.ngram, params.normalise, params.syscalls_list)
-        print("Unique sequences: {}".format(len(feature_vector)))
+        #print("Unique sequences: {}".format(len(feature_vector)))
 
     elif params.co_occurrence_matrix is not None:
         logging.info("Getting Co-occurrence matrix...")
@@ -159,7 +159,6 @@ def main():
         #print(feature_vector.get_csv_values(), file=params.output, end='')
         writer = csv.writer(params.output)
         writer.writerow(feature_vector.get_values())
-        #print(feature_vector.get_values(), file=params.output, end='')
     else:
         print(feature_vector, file=params.output, end='')
 

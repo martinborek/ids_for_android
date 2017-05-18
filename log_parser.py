@@ -5,6 +5,7 @@
 
 import errors
 import logging
+from itertools import product
 
 # logging.basicConfig(level=logging.INFO)
 
@@ -37,6 +38,7 @@ class FeatureVector:
 
     def get_values(self):
         # The returned values have to be always in the same order. For this purpose, keys are sorted alphabetically
+        # These values can be used as a feature vector for training a model (e.g. in SVM)
 
         if self.normalise:
             return [str(self.feature_dict[k] / self.system_calls_num) for k in sorted(self.feature_dict)]
@@ -45,6 +47,7 @@ class FeatureVector:
 
     def get_csv_values(self):
         # The returned values have to be always in the same order. For this purpose, keys are sorted alphabetically
+        # These values can be used as a feature vector for training a model (e.g. in SVM)
 
         if self.normalise:
             csv_string = ','.join([str(self.feature_dict[k] / self.system_calls_num) for k in sorted(self.feature_dict)])
@@ -120,10 +123,11 @@ class LogParser:
             histogram_dict = {}
 
         for call in self._s_call_list:
-            if syscalls_selected:
-                if call not in histogram_dict:
-                    # Only specified system calls should be included
-                    continue
+
+            if syscalls_selected and call not in histogram_dict:
+                # Only specified system calls should be included
+                continue
+
             histogram_dict[call] = histogram_dict.get(call, 0) + 1
 
         histogram = Histogram(histogram_dict, self.system_calls_num, normalise, syscalls_selected)
@@ -131,28 +135,47 @@ class LogParser:
         return histogram
 
     def ngram(self, n, normalise=False, syscalls_list=None):
+        syscalls_selected = (syscalls_list is not None)
+        if syscalls_selected:
+            # Specified system calls should be included even if they did not occur in the log file.
+            # Create all n combinations of system calls from the list
+            ngram_dict = {combination: 0 for combination in product(syscalls_list, repeat=n)}
+        else:
+            ngram_dict = {}
 
-        ngram_dict = {}
         for i in range(0, len(self._s_call_list) - n + 1):
             identifier = tuple(self._s_call_list[i:i + n])
+
+            if syscalls_selected and identifier not in ngram_dict:
+                # Only specified system calls should be included
+                continue
+
             ngram_dict[identifier] = ngram_dict.get(identifier, 0) + 1
 
-        ngram = Ngram(ngram_dict, self.system_calls_num, normalise)
+        ngram = Ngram(ngram_dict, self.system_calls_num, normalise, syscalls_selected)
 
         return ngram
 
     def co_occurrence_matrix(self, offset, normalise=False, syscalls_list=None):
-
-        if syscalls_list is not None:
-            com_dict = {syscall: 0 for syscall in syscalls_list}
+        syscalls_selected = (syscalls_list is not None)
+        if syscalls_selected:
+            # Specified system calls should be included even if they did not occur in the log file.
+            # Create all pairs of system calls from the list
+            com_dict = {(syscall_one, syscall_two): 0 for syscall_one in syscalls_list for syscall_two in
+                        syscalls_list}
         else:
             com_dict = {}
 
         for i in range(0, len(self._s_call_list)):
             for j in range(i, min(i+offset, len(self._s_call_list))):
                 identifier = (self._s_call_list[i], self._s_call_list[j])
+
+                if syscalls_selected and identifier not in com_dict:
+                    # Only specified system calls should be included
+                    continue
+
                 com_dict[identifier] = com_dict.get(identifier, 0) + 1
 
-        com = CoOccurrenceMatrix(com_dict, self.system_calls_num, normalise)
+        com = CoOccurrenceMatrix(com_dict, self.system_calls_num, normalise, syscalls_selected)
 
         return com
