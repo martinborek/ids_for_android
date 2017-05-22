@@ -156,8 +156,8 @@ def main():
         feature_vector = parser.histogram(params.normalise, params.syscalls_list)
 
     if params.csv_values:
-        #print(feature_vector.get_csv_values(), file=params.output, end='')
-        writer = csv.writer(params.output)
+        #print(feature_vector.get_csv_values(), file=params.output)
+        writer = csv.writer(params.output, lineterminator="\n")
         writer.writerow(feature_vector.get_values())
     else:
         print(feature_vector, file=params.output, end='')
