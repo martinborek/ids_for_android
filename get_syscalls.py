@@ -4,6 +4,7 @@
 # Date: May/2017
 
 # Get a list of all system calls that appear in all files in the specified directory
+# As input, give directory with FILTERED calls (meaning, just syscall names, no arguments, no return values, no time)
 
 import argparse
 import os
@@ -72,4 +73,3 @@ def main():
 
 
 main()
-
