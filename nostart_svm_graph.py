@@ -44,8 +44,8 @@ print("Loading data")
 
 plt.figure(figsize=(11,9))
 
-datasets_to_compare = ["chunks_nostart/20_histogram", "chunks_nostart/histogram"]
-datasets_titles = ["Histogram (20 syscalls, no start)", "Histogram (all syscalls, no start)"]
+datasets_to_compare = ["20_histogram", "nostart/20_histogram"]
+datasets_titles = ["Histogram (20 syscalls, original)", "Histogram (20 syscalls, no start)"]
 for dataset_index in range(0, len(datasets_to_compare)):
 #for nu, gamma in params:
     #dataset_index=0
@@ -104,7 +104,7 @@ for dataset_index in range(0, len(datasets_to_compare)):
     print("Fitting the model...")
     #clf = svm.OneClassSVM(nu=0.01, kernel="rbf", gamma=0.1) #ngram
     #clf = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.10) #com
-    clf = svm.OneClassSVM(nu=0.2, kernel="rbf", gamma=100) #histogram
+    clf = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.01) #histogram
 
     clf.fit(benign_dataset_train)
 
@@ -129,8 +129,8 @@ for dataset_index in range(0, len(datasets_to_compare)):
     plt.plot(fpr, tpr, label=datasets_titles[dataset_index] + ' [AUROC=%0.4f]' % roc_auc)
 
 
-datasets_to_compare = ["chunks_nostart/ngram2", "chunks_nostart/ngram3"]
-datasets_titles = ["N-gram 2 (all syscalls, no start)", "N-gram 3 (all syscalls, no start)"]
+datasets_to_compare = ["ngram3", "nostart/ngram3"]
+datasets_titles = ["N-gram 3 (all syscalls, original)", "N-gram 3 (all syscalls, no start)"]
 for dataset_index in range(0, len(datasets_to_compare)):
 #for nu, gamma in params:
     #dataset_index=0
@@ -188,7 +188,7 @@ for dataset_index in range(0, len(datasets_to_compare)):
 
     print("Fitting the model...")
 
-    clf = svm.OneClassSVM(nu=0.2, kernel="rbf", gamma=100) #ngram
+    clf = svm.OneClassSVM(nu=0.01, kernel="rbf", gamma=0.1) #ngram
     #clf = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.10) #com
     #clf = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.01) #histogram
 
@@ -215,8 +215,8 @@ for dataset_index in range(0, len(datasets_to_compare)):
     roc_auc = auc(fpr, tpr)
     plt.plot(fpr, tpr, label=datasets_titles[dataset_index] + ' [AUROC=%0.4f]' % roc_auc)
 
-datasets_to_compare = ["chunks_nostart/com5", "chunks_nostart/com10"]
-datasets_titles = ["Co-occurrence matrix 5 (all syscalls, no start)", "Co-occurrence matrix 10 (all syscalls, no start)"]
+datasets_to_compare = ["com5", "nostart/com5"]
+datasets_titles = ["Co-occurrence matrix 5 (all syscalls, original)", "Co-occurrence matrix 5 (all syscalls, no start)"]
 for dataset_index in range(0, len(datasets_to_compare)):
 #for nu, gamma in params:
     #dataset_index=0
